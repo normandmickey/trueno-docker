@@ -1,0 +1,210 @@
+version: '3.3'
+services:
+
+######################
+# Regtest Containers #
+######################
+
+  bitcoind-regtest:
+    image: bitcoind
+    container_name: bitcoind-regtest
+    build:
+      context: ../services/admin_website/app/app/bitcoind_client
+      dockerfile: ${PWD}/bitcoind/Dockerfile
+    volumes:
+      - ${PWD}/bitcoind-regtest-data:/home/bitcoin/.bitcoin
+    command:
+      bitcoind
+      -conf=/bitcoind-regtest.conf
+      -server
+      -regtest
+      -rpcallowip=0.0.0.0/0
+      -debug=0
+      -zmqpubrawblock=tcp://*:28334
+      -zmqpubrawtx=tcp://*:28334
+      -zmqpubhashtx=tcp://*:28334
+      -zmqpubhashblock=tcp://*:28334
+      -txindex=1
+    expose:
+     - "18443" # regtest RPC
+     - "18444" # regtest p2p
+     - "28334" # regtest ZMQ
+    ports:
+     - "18443:18443" # regtest RPC
+     - "18444:18444" # regtest p2p
+     - "28334:28334" # regtest ZMQ
+
+  lnd-regtest:
+    image: lnd
+    container_name: lnd-regtest
+    build:
+      context: ${PWD}/lnd/
+      dockerfile: ${PWD}/lnd/Dockerfile
+    volumes:
+      - ${PWD}/lnd-regtest-data:/root/.lnd
+    environment:
+      - RPCHOST=bitcoind-regtest
+      - RPCUSER=user
+      - RPCPASS=yPFfmRweQDFSAyqvgP4LuTO0LYKB7eBVBrLAHo4Nxwo=
+      - NETWORK=regtest
+      - CHAIN=bitcoin
+      - DEBUG=debug
+      - BITCOIN_NODE=bitcoind
+      - ZMQ_PATH=tcp://bitcoind-regtest:28334
+      - RPC_LISTEN=:10011
+      - REST_LISTEN=:8082
+      - LISTEN=:9737
+    entrypoint: ["./start-lnd.sh"]
+    restart: always
+    expose:
+     - "10011" # testnet gRPC
+     - "8082"  # testnet REST
+     - "9737"  # testnet p2p
+    ports:
+     - "10011:10011" # regtest gRPC
+     - "8082:8082"   # regtest REST
+     - "9737:9737"   # regtest p2p
+
+  logging-service-regtest:
+    image: logging-service
+    container_name: logging-service-regtest
+    build:
+      context: ../services/logging # The app directory's parent
+      dockerfile: ${PWD}/services/logging/Dockerfile
+    environment:
+      - WEBSOCKET_HOST=logging-service-regtest
+      - WEBSOCKET_PORT=8765
+    volumes:
+      - ${PWD}/bitcoind-regtest-data:/home/bitcoin/.bitcoin:ro
+      - ${PWD}/lnd-regtest-data:/root/.lnd:ro
+    ports:
+     - "8765:8765"
+
+  admin-website-regtest:
+    image: admin_website
+    container_name: admin-website-regtest
+    build:
+      context: ../services/admin_website # The app directory's parent
+      dockerfile: ${PWD}/services/admin_website/Dockerfile
+    environment:
+      - WEBSOCKET_HOST=logging-service-regtest
+      - WEBSOCKET_PORT=8765
+      - BITCOIND_RPC_HOST=bitcoind-regtest
+      - NETWORK=regtest
+      - LND_RPC_URI=lnd-regtest:10011
+      - LND_PEER_URI=lnd-regtest:9737
+      - FLASK_APP=app/main.py
+      - FLASK_DEBUG=1
+      - 'RUN=flask run --host=0.0.0.0 --port=80'
+    command: flask run --host=0.0.0.0 --port=80
+    volumes:
+      - ${PWD}/bitcoind-regtest-data:/root/.bitcoin
+      - ${PWD}/lnd-regtest-data:/root/.lnd
+      - ${PWD}/../services/admin_website/app/app:/app/app
+    ports:
+     - "5003:80" # expose regtest admin website to localhost:5003
+
+
+######################
+# Testnet Containers #
+######################
+
+  bitcoind-testnet:
+    image: bitcoind
+    container_name: bitcoind-testnet
+    build:
+      context: ../services/admin_website/app/app/bitcoind_client
+      dockerfile: ${PWD}/bitcoind/Dockerfile
+    volumes:
+      - ${PWD}/bitcoind-testnet-data:/home/bitcoin/.bitcoin
+    command:
+      bitcoind
+      -conf=/bitcoind-testnet.conf
+      -server
+      -testnet
+      -rpcallowip=0.0.0.0/0
+      -debug=0
+      -zmqpubrawblock=tcp://*:28333
+      -zmqpubrawtx=tcp://*:28333
+      -zmqpubhashtx=tcp://*:28333
+      -zmqpubhashblock=tcp://*:28333
+      -txindex=1
+    expose:
+     - "18332"  # testnet RPC
+     - "18333"  # testnet p2p
+     - "28333"  # testnet ZMQ
+     # The RPC and p2p ports are exposed in the parent image
+    ports:
+     - "18332:18332" # testnet RPC
+     - "18333:18333" # testnet p2p
+     - "28333:28333" # testnet ZMQ
+
+  lnd-testnet:
+    image: lnd
+    container_name: lnd-testnet
+    build:
+      context: ${PWD}/lnd/
+      dockerfile: ${PWD}/lnd/Dockerfile
+    volumes:
+      - ${PWD}/lnd-testnet-data:/root/.lnd
+    environment:
+      - RPCHOST=bitcoind-testnet
+      - RPCUSER=user
+      - RPCPASS=yPFfmRweQDFSAyqvgP4LuTO0LYKB7eBVBrLAHo4Nxwo=
+      - NETWORK=testnet
+      - CHAIN=bitcoin
+      - DEBUG=debug
+      - BITCOIN_NODE=bitcoind
+      - ZMQ_PATH=tcp://bitcoind-testnet:28333
+      - RPC_LISTEN=:10012
+      - REST_LISTEN=:8081
+      - LISTEN=:9736
+    entrypoint: ["./start-lnd.sh"]
+    restart: always
+    expose:
+     - "10012" # testnet gRPC
+     - "8081"  # testnet REST
+     - "9736"  # testnet p2p
+    ports:
+     - "10012:10012" # testnet gRPC
+     - "8081:8081"   # testnet REST
+     - "9736:9736"   # testnet p2p
+
+  logging-service-testnet:
+    image: logging-service
+    container_name: logging-service-testnet
+    build:
+      context: ../services/logging # The app directory's parent
+      dockerfile: ${PWD}/services/logging/Dockerfile
+    environment:
+      - WEBSOCKET_HOST=logging-service-testnet
+      - WEBSOCKET_PORT=8764
+    volumes:
+      - ${PWD}/bitcoind-testnet-data:/home/bitcoin/.bitcoin:ro
+      - ${PWD}/lnd-testnet-data:/root/.lnd:ro
+    ports:
+     - "8764:8764"
+
+  admin-website-testnet:
+    image: admin_website
+    container_name: admin-website-testnet
+    build:
+      context: ../services/admin_website # The app directory's parent
+      dockerfile: ${PWD}/services/admin_website/Dockerfile
+    environment:
+      - WEBSOCKET_HOST=logging-service-testnet
+      - WEBSOCKET_PORT=8764
+      - BITCOIND_RPC_HOST=bitcoind-testnet
+      - NETWORK=testnet
+      - LND_RPC_URI=lnd-testnet:10012
+      - LND_PEER_URI=lnd-testnet:9736
+      - FLASK_APP=app/main.py
+      - FLASK_DEBUG=1
+      - 'RUN=flask run --host=0.0.0.0 --port=80'
+    command: flask run --host=0.0.0.0 --port=80
+    volumes:
+      - ${PWD}/bitcoind-testnet-data:/root/.bitcoin
+      - ${PWD}/lnd-testnet-data:/root/.lnd
+      - ${PWD}/../services/admin_website/app/app:/app/app
+    ports:
+     - "5002:80" # expose testnet admin website to localhost:5003

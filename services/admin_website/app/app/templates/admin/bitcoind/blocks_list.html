@@ -1,0 +1,21 @@
+{% if network == 'regtest' %}
+    <div class="row">
+        <div class="col-md-1"></div>
+        <div class="col-md-10">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Regtest dials</h3>
+                </div>
+                <div class="panel-body">
+                    <dl class="dl-horizontal">
+                        <form method=post>
+                            {{ render_field(mine_blocks_form.num_blocks) }}
+                            <button class="btn btn-primary" type="submit" value="Mine">Mine</button>
+                        </form>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-1"></div>
+    </div>
+{% endif %}

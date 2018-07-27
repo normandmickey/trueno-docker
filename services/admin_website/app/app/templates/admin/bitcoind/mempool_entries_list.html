@@ -1,0 +1,17 @@
+
+<div class="row">
+    <div class="col-md-1"></div>
+    <div class="col-md-5">
+        {{ data.definition_list(title='Mempool Info', data_dict=mempool_info) }}
+    </div>
+    <div class="col-md-5">
+        <div class="progress">
+            <div id="progress-bar" class="progress-bar"
+                 role="progressbar" aria-valuenow="0" aria-valuemin="0"
+                 aria-valuemax="10000" style="width: 0%;">
+                Waiting for websocket connection...
+            </div>
+        </div>
+    </div>
+    <div class="col-md-1"></div>
+</div>

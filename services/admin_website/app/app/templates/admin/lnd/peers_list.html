@@ -1,0 +1,13 @@
+{% extends 'admin/lnd/lnd_list.html' %}
+
+{% block model_menu_bar_after_filters %}
+    <li>
+        <form  action="{{ url_for('peer.index_view')}}" method="POST"  class="form-inline">
+            <div class="form-group">
+                {{ add_peer_form.pubkey_at_host() }}
+            </div>
+            <input class="btn btn-primary" type=submit value="Connect">
+        </form>
+    </li>
+    {{ super() }}
+{% endblock %}

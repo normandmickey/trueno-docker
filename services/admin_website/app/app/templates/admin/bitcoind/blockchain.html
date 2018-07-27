@@ -1,0 +1,66 @@
+{% extends 'admin/master.html' %}
+
+{% import 'definition_list_macro.html' as data %}
+{% from "form_macros.html" import render_field %}
+
+{% block body %}
+    <script type="text/javascript" charset="utf-8">
+        var socket = new WebSocket("ws://" + document.domain + ':' + {{ websocket_port }});
+
+        socket.onmessage = function (event) {
+            if (event.data === "ping") {
+                socket.send("pong");
+                return;
+            }
+            console.log(event.data);
+            var data = JSON.parse(event.data);
+            if (data.type === "update_tip") {
+                var progress = parseFloat(data.data.progress);
+                progress *= 10000;
+                progress = Math.round(progress);
+                document.getElementById("progress-bar").setAttribute("aria-valuenow", progress);
+                document.getElementById("progress-bar").style.width = (progress / 100).toString() + "%";
+                document.getElementById("progress-bar").innerText = "Blockchain sync " + (progress / 100).toString() + "%";
+            }
+        }
+    </script>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-md-1">
+            </div>
+            <div class="col-md-10">
+                {{ data.definition_list(title='Network Info', data_dict=network_info) }}
+
+            </div>
+            <div class="col-md-1"></div>
+        </div>
+        <div class="row">
+            <div class="col-md-1">
+            </div>
+            <div class="col-md-10">
+                {{ data.definition_list(title='Blockchain Info', data_dict=blockchain_info) }}
+
+            </div>
+            <div class="col-md-1"></div>
+        </div>
+        <div class="row">
+            <div class="col-md-1">
+            </div>
+            <div class="col-md-10">
+                {{ data.definition_list(title='Transaction Stats', data_dict=transaction_stats) }}
+
+            </div>
+            <div class="col-md-1"></div>
+        </div>
+        <div class="row">
+            <div class="col-md-1">
+            </div>
+            <div class="col-md-10">
+                {{ data.definition_list(title='Block Stats', data_dict=block_stats) }}
+
+            </div>
+            <div class="col-md-1"></div>
+        </div>
+    </div>
+{% endblock %}

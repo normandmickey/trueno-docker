@@ -1,0 +1,13 @@
+{% extends 'admin/lnd/lnd_list.html' %}
+
+{% block model_menu_bar_after_filters %}
+    <li>
+        <form  action="{{ url_for('payment.index_view')}}" method="POST"  class="form-inline">
+            <div class="form-group">
+                {{ send_payment_form.payment_request() }}
+            </div>
+            <input class="btn btn-primary" type=submit value="Send">
+        </form>
+    </li>
+    {{ super() }}
+{% endblock %}
